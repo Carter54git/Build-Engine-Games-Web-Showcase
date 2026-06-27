@@ -59,11 +59,5 @@ Engine source lives in separate `*web` repositories (NBlood, EDuke32, Rednukem, 
 
 ---
 
-## Русский
-
-Веб-витрина игр на **Build Engine**: WASM-порты, единый ланчер, проверка GRP, сохранения в IndexedDB.
-
-**Онлайн:** [https://buildenginegames.online/](https://buildenginegames.online/)
-
 
 © 2026 [Carter54](https://github.com/Carter54git)
