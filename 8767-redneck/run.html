@@ -1,0 +1,336 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Redneck Rampage</title>
+  <link rel="icon" href="indeximg.png" type="image/png">
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
+    }
+    #canvas {
+      display: block;
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      outline: none;
+      cursor: default;
+      background: #000;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+    #loader {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      background: #000;
+      transition: opacity 0.35s ease;
+    }
+    #loader.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+    #loader-text {
+      font-family: 'Courier New', monospace;
+      font-size: 15px;
+      letter-spacing: 3px;
+      color: #c0a060;
+      text-shadow: 0 0 10px rgba(195, 30, 30, 0.45);
+    }
+    #loader-bar {
+      width: min(420px, 72vw);
+      height: 10px;
+      border: 2px solid #6a1818;
+      background: #120606;
+      box-shadow: 0 0 16px rgba(120, 20, 20, 0.35);
+    }
+    #loader-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #6a1818, #c41e3a, #ffd070);
+      transition: width 0.12s ease-out;
+    }
+    #loader-pct {
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      color: #8a6040;
+      letter-spacing: 2px;
+    }
+  </style>
+</head>
+<body>
+  <div id="loader">
+    <div id="loader-text">Загрузка</div>
+    <div id="loader-bar"><div id="loader-fill"></div></div>
+    <div id="loader-pct">0%</div>
+  </div>
+  <canvas id="canvas" width="960" height="540" tabindex="0" title="Click to capture mouse for look"></canvas>
+
+  <script>
+(function () {
+  'use strict';
+
+  var params = new URLSearchParams(location.search);
+  var initialSpeed = parseFloat(params.get('speed'));
+  // Slightly below 1.0: gameplay uses emscripten_get_now() → patched performance.now.
+  if (!isFinite(initialSpeed) || initialSpeed <= 0) initialSpeed = 0.93;
+  window.__nbSpeed = initialSpeed;
+
+  (function patchClocks() {
+    var perfOrig = performance.now.bind(performance);
+    var dateOrig = Date.now.bind(Date);
+    var p0 = perfOrig();
+    var d0 = dateOrig();
+    performance.now = function () { return p0 + (perfOrig() - p0) * window.__nbSpeed; };
+    Date.now      = function () { return d0 + (dateOrig() - d0) * window.__nbSpeed; };
+  })();
+  window.__rrGameActive = false;
+  window.__rrMenuOpen = false;
+  window.__rrMouseDx = 0;
+  window.__rrMouseDy = 0;
+
+  var canvas     = document.getElementById('canvas');
+  var loader     = document.getElementById('loader');
+  var loaderText = document.getElementById('loader-text');
+  var loaderFill = document.getElementById('loader-fill');
+  var loaderPct  = document.getElementById('loader-pct');
+  var buildTag   = String(Date.now());
+  var activeMod  = null;
+  var progressIv = null;
+
+  function setLoadProgress(pct, label) {
+    pct = Math.max(0, Math.min(100, pct));
+    loaderFill.style.width = pct + '%';
+    loaderPct.textContent = Math.round(pct) + '%';
+    if (label) loaderText.textContent = label;
+  }
+
+  function dataDownloadPct(mod) {
+    if (!mod || !mod.dataFileDownloads) return null;
+    var loaded = 0;
+    var total = 0;
+    var d = mod.dataFileDownloads;
+    for (var k in d) {
+      if (!Object.prototype.hasOwnProperty.call(d, k)) continue;
+      loaded += d[k].loaded || 0;
+      total += d[k].total || 0;
+    }
+    if (total <= 0) return null;
+    return 100 * loaded / total;
+  }
+
+  function startProgressPoll() {
+    if (progressIv) return;
+    progressIv = setInterval(function () {
+      var p = dataDownloadPct(activeMod);
+      if (p != null) setLoadProgress(12 + p * 0.83, 'Загрузка данных');
+    }, 80);
+  }
+
+  function stopProgressPoll() {
+    if (progressIv) clearInterval(progressIv);
+    progressIv = null;
+  }
+
+  function hideLoader() {
+    stopProgressPoll();
+    setLoadProgress(100, 'Запуск');
+    loader.classList.add('hidden');
+  }
+  window.__rrBuildTag = buildTag;
+  var GAME_W = 960;
+  var GAME_H = 540;
+
+  function syncGameCanvas() {
+    canvas.width = GAME_W;
+    canvas.height = GAME_H;
+  }
+  syncGameCanvas();
+  window.addEventListener('resize', syncGameCanvas);
+
+  function loadScript(src) {
+    return new Promise(function (resolve, reject) {
+      var s = document.createElement('script');
+      s.src = src;
+      s.onload = resolve;
+      s.onerror = function () { reject(new Error('load failed: ' + src)); };
+      document.head.appendChild(s);
+    });
+  }
+
+  function loadSavesHelper() {
+    if (window.RRSaves && window.RRSaves.prefetch) {
+      return window.RRSaves.prefetch();
+    }
+    return loadScript('saves.js?v=' + buildTag).then(function () {
+      return window.RRSaves && window.RRSaves.prefetch ? window.RRSaves.prefetch() : undefined;
+    });
+  }
+
+  function enterImmersive() {
+    canvas.focus();
+    if (!window.__rrGameActive || window.__rrMenuOpen) return;
+    var pl = canvas.requestPointerLock || canvas.mozRequestPointerLock;
+    if (pl && document.pointerLockElement !== canvas) {
+      try { pl.call(canvas); } catch (e) {}
+    }
+  }
+
+  function onMouseMove(e) {
+    if (document.pointerLockElement !== canvas) return;
+    window.__rrMouseDx += e.movementX || 0;
+    window.__rrMouseDy += e.movementY || 0;
+  }
+  document.addEventListener('mousemove', onMouseMove);
+  canvas.addEventListener('mousemove', onMouseMove);
+
+  document.addEventListener('pointerlockerror', function () {
+    console.warn('pointer lock failed');
+  });
+
+  document.addEventListener('pointerlockchange', function () {
+    if (window.__rrGameActive && !window.__rrMenuOpen && document.pointerLockElement !== canvas)
+      enterImmersive();
+  });
+
+  canvas.addEventListener('mousedown', function () {
+    canvas.focus();
+    if (window.__rrGameActive && !window.__rrMenuOpen) enterImmersive();
+  });
+  canvas.addEventListener('click', function () {
+    canvas.focus();
+    if (window.__rrGameActive && !window.__rrMenuOpen) enterImmersive();
+  });
+  document.addEventListener('keydown', function (e) {
+    canvas.focus();
+    if (window.__rrMenuOpen) {
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter', ' '].indexOf(e.key) >= 0)
+        e.preventDefault();
+    }
+  });
+
+  window.__nbRemapping = false;
+  function remapCtoCtrl(e) {
+    if (window.__nbRemapping) return;
+    var isC = e.code === 'KeyC' || e.key === 'c' || e.key === 'C' || e.keyCode === 67;
+    if (!isC) return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    window.__nbRemapping = true;
+    try {
+      document.dispatchEvent(new KeyboardEvent(e.type, {
+        key: 'Control', code: 'ControlLeft',
+        keyCode: 17, which: 17, location: 1,
+        bubbles: true, cancelable: true,
+        repeat: e.repeat,
+        ctrlKey: e.type === 'keydown'
+      }));
+    } finally {
+      window.__nbRemapping = false;
+    }
+  }
+  window.addEventListener('keydown', remapCtoCtrl, true);
+  window.addEventListener('keyup',   remapCtoCtrl, true);
+
+  if (location.protocol === 'file:') {
+    setLoadProgress(0, 'Откройте через serve.py');
+    return;
+  }
+
+  function startGame() {
+    syncGameCanvas();
+    canvas.focus();
+    setLoadProgress(2, 'Подготовка');
+
+    loadSavesHelper()
+      .then(function () {
+        setLoadProgress(8, 'Загрузка скриптов');
+        return loadScript('rednukem.js?v=' + buildTag);
+      })
+      .then(function () {
+        setLoadProgress(10, 'Загрузка');
+        syncGameCanvas();
+        if (typeof createRednukemModule !== 'function') {
+          throw new Error('createRednukemModule missing');
+        }
+        return createRednukemModule({
+          canvas: canvas,
+          webglContextAttributes: {
+            alpha: false,
+            depth: false,
+            stencil: false,
+            antialias: false,
+            preserveDrawingBuffer: true
+          },
+          arguments: ['-usecwd', '-cfg', 'REDNECK.CFG', '-nologo'],
+          print: function (t) {
+            if (t) console.log(t);
+          },
+          printErr: function (t) {
+            if (!t) return;
+            if (/^\s*runtime\s+src/.test(t) || /^\s*date\s+time/.test(t)) return;
+            if (/INFO\|/.test(t)) { console.log(t); return; }
+            console.error(t);
+          },
+          locateFile: function (p) {
+            var tag = window.__rrBuildTag || buildTag;
+            if (/\.(wasm|data|js)$/i.test(p)) return p + '?v=' + tag;
+            return p;
+          },
+          setStatus: function (text) {
+            activeMod = this;
+            if (!text) return;
+            var frac = text.match(/(\d+)\s*\/\s*(\d+)/);
+            if (frac) {
+              var pct = 100 * (+frac[1] / +frac[2]);
+              setLoadProgress(12 + pct * 0.83, 'Загрузка данных');
+              return;
+            }
+            if (/download/i.test(text)) {
+              startProgressPoll();
+              setLoadProgress(12, 'Загрузка данных');
+              return;
+            }
+            if (/run/i.test(text)) setLoadProgress(96, 'Запуск');
+          },
+          onRuntimeInitialized: function () {
+            hideLoader();
+            syncGameCanvas();
+            canvas.focus();
+            if (window.RRSaves) {
+              RRSaves.attach(this);
+              RRSaves.loadIntoFs(this, function () {});
+            }
+            if (params.get('autostart') === '1') {
+              setTimeout(function () { window.__rrAutostart = true; }, 6000);
+            }
+          },
+          onAbort: function (r) {
+            console.error('abort:', r);
+            stopProgressPoll();
+            setLoadProgress(0, 'Ошибка');
+          }
+        });
+      })
+      .catch(function (e) {
+        console.error(e);
+        stopProgressPoll();
+        setLoadProgress(0, 'Ошибка');
+      });
+  }
+
+  startGame();
+})();
+  </script>
+</body>
+</html>

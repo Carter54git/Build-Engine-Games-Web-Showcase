@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>NBlood</title>
+  <link rel="icon" href="indeximg.png" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
+      color: #c0a060;
+    }
+    #canvas {
+      display: none;
+      width: 100vw;
+      height: 100vh;
+      outline: none;
+      cursor: crosshair;
+    }
+    #canvas.visible { display: block; }
+
+    #splash {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 36px;
+      background:
+        radial-gradient(ellipse at center, #2a0606 0%, #100303 55%, #000 100%),
+        #000;
+      transition: opacity 0.4s ease;
+    }
+    #splash.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+    #splash-img {
+      max-width: 72vw;
+      max-height: 62vh;
+      object-fit: contain;
+      filter: drop-shadow(0 0 28px rgba(160, 20, 20, 0.55)) brightness(0.92);
+      user-select: none;
+      pointer-events: none;
+    }
+    #play {
+      font-family: 'Press Start 2P', 'Courier New', monospace;
+      font-size: 26px;
+      color: #c0a060;
+      background: transparent;
+      border: 3px solid #6a1818;
+      padding: 16px 44px;
+      letter-spacing: 6px;
+      cursor: pointer;
+      transition: color 0.18s, border-color 0.18s, box-shadow 0.18s, background 0.18s, transform 0.05s;
+      text-shadow: 0 0 12px rgba(195, 30, 30, 0.55);
+      image-rendering: pixelated;
+    }
+    #play:hover, #play:focus-visible {
+      color: #ffd070;
+      border-color: #c41e3a;
+      background: rgba(70, 10, 10, 0.4);
+      box-shadow: 0 0 28px rgba(195, 30, 30, 0.7);
+      outline: none;
+    }
+    #play:active { transform: translateY(1px); }
+    #play[disabled] {
+      cursor: default;
+      color: #6a1818;
+      border-color: #3a0a0a;
+      text-shadow: none;
+      box-shadow: none;
+      background: transparent;
+    }
+    #footer {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 22px;
+      text-align: center;
+      font-family: 'Press Start 2P', 'Courier New', monospace;
+      font-size: 11px;
+      letter-spacing: 2px;
+      color: #6a4030;
+      user-select: none;
+    }
+    #footer a {
+      color: #b07040;
+      text-decoration: none;
+      transition: color 0.18s, text-shadow 0.18s;
+    }
+    #footer a:hover, #footer a:focus-visible {
+      color: #ffd070;
+      text-shadow: 0 0 8px rgba(195, 30, 30, 0.6);
+      outline: none;
+    }
+    #footer .sep { margin: 0 14px; color: #4a2010; }
+
+    #loader {
+      position: fixed;
+      inset: 0;
+      z-index: 15;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      background: #000;
+      transition: opacity 0.35s ease;
+    }
+    #loader.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+    #loader-text {
+      font-family: 'Courier New', monospace;
+      font-size: 15px;
+      letter-spacing: 3px;
+      color: #c0a060;
+      text-shadow: 0 0 10px rgba(195, 30, 30, 0.45);
+    }
+    #loader-bar {
+      width: min(420px, 72vw);
+      height: 10px;
+      border: 2px solid #6a1818;
+      background: #120606;
+      box-shadow: 0 0 16px rgba(120, 20, 20, 0.35);
+    }
+    #loader-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #6a1818, #c41e3a, #ffd070);
+      transition: width 0.12s ease-out;
+    }
+    #loader-pct {
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      color: #8a6040;
+      letter-spacing: 2px;
+    }
+  </style>
+</head>
+<body>
+  <div id="splash">
+    <img id="splash-img" src="indeximg.png" alt="">
+    <button id="play" type="button">PLAY</button>
+    <div id="footer">
+      <a href="https://t.me/gamebase54" target="_blank" rel="noopener noreferrer">Carter54</a>
+      <span class="sep">|</span>
+      <a href="https://github.com/Carter54git" target="_blank" rel="noopener noreferrer">GitHub</a>
+    </div>
+  </div>
+  <div id="loader" class="hidden">
+    <div id="loader-text">Loading</div>
+    <div id="loader-bar"><div id="loader-fill"></div></div>
+    <div id="loader-pct">0%</div>
+  </div>
+  <canvas id="canvas" width="1280" height="720" tabindex="0"></canvas>
+
+  <script>
+(function () {
+  'use strict';
+
+  var params = new URLSearchParams(location.search);
+  var initialSpeed = parseFloat(params.get('speed'));
+  if (!isFinite(initialSpeed) || initialSpeed <= 0) initialSpeed = 0.22;
+  window.__nbSpeed = initialSpeed;
+
+  (function patchClocks() {
+    var perfOrig = performance.now.bind(performance);
+    var dateOrig = Date.now.bind(Date);
+    var p0 = perfOrig();
+    var d0 = dateOrig();
+    performance.now = function () { return p0 + (perfOrig() - p0) * window.__nbSpeed; };
+    Date.now      = function () { return d0 + (dateOrig() - d0) * window.__nbSpeed; };
+  })();
+
+  (function patchSetTimeout() {
+    var origST = window.setTimeout;
+    window.setTimeout = function (cb, delay) {
+      var d = +delay || 0;
+      var s = +window.__nbSpeed || 1;
+      if (s > 0 && s < 1 && d >= 0 && d <= 100) {
+        d = (d === 0) ? ((1 / s - 1) * 4) : (d / s);
+      }
+      var args = Array.prototype.slice.call(arguments, 2);
+      return origST.apply(window, [cb, d].concat(args));
+    };
+  })();
+
+  window.nbSetSpeed = function (v) {
+    v = parseFloat(v);
+    if (!isFinite(v) || v <= 0) return window.__nbSpeed;
+    window.__nbSpeed = v;
+    return v;
+  };
+
+  var canvas     = document.getElementById('canvas');
+  var splash     = document.getElementById('splash');
+  var playBtn    = document.getElementById('play');
+  var loader     = document.getElementById('loader');
+  var loaderText = document.getElementById('loader-text');
+  var loaderFill = document.getElementById('loader-fill');
+  var loaderPct  = document.getElementById('loader-pct');
+  var buildTag   = String(Date.now());
+  var activeMod  = null;
+  var progressIv = null;
+
+  function setLoadProgress(pct, label) {
+    pct = Math.max(0, Math.min(100, pct));
+    loaderFill.style.width = pct + '%';
+    loaderPct.textContent = Math.round(pct) + '%';
+    if (label) loaderText.textContent = label;
+  }
+
+  function dataDownloadPct(mod) {
+    if (!mod || !mod.dataFileDownloads) return null;
+    var loaded = 0;
+    var total = 0;
+    var d = mod.dataFileDownloads;
+    for (var k in d) {
+      if (!Object.prototype.hasOwnProperty.call(d, k)) continue;
+      loaded += d[k].loaded || 0;
+      total += d[k].total || 0;
+    }
+    if (total <= 0) return null;
+    return 100 * loaded / total;
+  }
+
+  function startProgressPoll() {
+    if (progressIv) return;
+    progressIv = setInterval(function () {
+      var p = dataDownloadPct(activeMod);
+      if (p != null) setLoadProgress(12 + p * 0.83, 'Loading');
+    }, 80);
+  }
+
+  function stopProgressPoll() {
+    if (progressIv) clearInterval(progressIv);
+    progressIv = null;
+  }
+
+  function showLoader() {
+    loader.classList.remove('hidden');
+    setLoadProgress(0, 'Loading');
+  }
+
+  function hideLoader() {
+    stopProgressPoll();
+    setLoadProgress(100, 'Loading');
+    loader.classList.add('hidden');
+  }
+
+  if (location.protocol === 'file:') {
+    playBtn.disabled = true;
+    playBtn.textContent = 'OPEN VIA SERVE.PY';
+    return;
+  }
+
+  function loadScript(src) {
+    return new Promise(function (resolve, reject) {
+      var s = document.createElement('script');
+      s.src = src;
+      s.onload = resolve;
+      s.onerror = function () { reject(new Error('load failed: ' + src)); };
+      document.head.appendChild(s);
+    });
+  }
+
+  function loadSavesHelper() {
+    if (window.NBSaves) {
+      return window.NBSaves.prefetch ? window.NBSaves.prefetch() : Promise.resolve();
+    }
+    return loadScript('saves.js?v=' + buildTag).then(function () {
+      return window.NBSaves && window.NBSaves.prefetch ? window.NBSaves.prefetch() : undefined;
+    });
+  }
+
+  function enterImmersive() {
+    if (splash && !splash.classList.contains('hidden')) return;
+    if (loader && !loader.classList.contains('hidden')) return;
+    canvas.focus();
+    var pl = canvas.requestPointerLock || canvas.mozRequestPointerLock;
+    if (pl && document.pointerLockElement !== canvas) {
+      try { pl.call(canvas); } catch (e) {}
+    }
+  }
+  canvas.addEventListener('click', enterImmersive);
+
+  window.__nbRemapping = false;
+  function remapCtoCtrl(e) {
+    if (window.__nbRemapping) return;
+    var isC = e.code === 'KeyC' || e.key === 'c' || e.key === 'C' || e.keyCode === 67;
+    if (!isC) return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    window.__nbRemapping = true;
+    try {
+      document.dispatchEvent(new KeyboardEvent(e.type, {
+        key: 'Control', code: 'ControlLeft',
+        keyCode: 17, which: 17, location: 1,
+        bubbles: true, cancelable: true,
+        repeat: e.repeat,
+        ctrlKey: e.type === 'keydown'
+      }));
+    } finally {
+      window.__nbRemapping = false;
+    }
+  }
+  window.addEventListener('keydown', remapCtoCtrl, true);
+  window.addEventListener('keyup',   remapCtoCtrl, true);
+
+  var booted = false;
+  function failBoot(msg) {
+    booted = false;
+    stopProgressPoll();
+    hideLoader();
+    splash.classList.remove('hidden');
+    playBtn.disabled = false;
+    playBtn.textContent = msg || 'ERROR';
+  }
+
+  function startGame() {
+    if (booted) return;
+    booted = true;
+    playBtn.disabled = true;
+    splash.classList.add('hidden');
+    showLoader();
+    setLoadProgress(2, 'Loading');
+
+    loadSavesHelper()
+      .then(function () {
+        setLoadProgress(8, 'Loading');
+        return loadScript('nblood.js?v=' + buildTag);
+      })
+      .then(function () {
+        setLoadProgress(10, 'Loading');
+        if (typeof createNBloodModule !== 'function') {
+          throw new Error('createNBloodModule missing');
+        }
+        return createNBloodModule({
+          canvas: canvas,
+          webglContextAttributes: {
+            alpha: false,
+            depth: false,
+            stencil: false,
+            antialias: false,
+            preserveDrawingBuffer: true
+          },
+          arguments: ['-usecwd', '-ini', 'blood.ini', '-quick', '-nodemo'],
+          print: function (t) { console.log(t); },
+          printErr: function (t) { console.error(t); },
+          locateFile: function (p) {
+            if (/\.(wasm|data)$/i.test(p)) return p + '?v=' + buildTag;
+            return p;
+          },
+          setStatus: function (text) {
+            activeMod = this;
+            if (!text) return;
+            var frac = text.match(/(\d+)\s*\/\s*(\d+)/);
+            if (frac) {
+              var pct = 100 * (+frac[1] / +frac[2]);
+              setLoadProgress(12 + pct * 0.83, 'Loading');
+              return;
+            }
+            if (/download/i.test(text)) {
+              startProgressPoll();
+              setLoadProgress(12, 'Loading');
+              return;
+            }
+            if (/run/i.test(text)) setLoadProgress(96, 'Loading');
+          },
+          onRuntimeInitialized: function () {
+            var mod = this;
+            activeMod = mod;
+            hideLoader();
+            canvas.classList.add('visible');
+            canvas.focus();
+            if (window.NBSaves) {
+              NBSaves.attach(mod);
+              NBSaves.loadIntoFs(mod, function () {});
+            }
+          },
+          onAbort: function (r) {
+            console.error('abort:', r);
+            failBoot('ERROR');
+          }
+        });
+      })
+      .catch(function (e) {
+        console.error(e);
+        failBoot('ERROR');
+      });
+  }
+  playBtn.addEventListener('click', startGame);
+  startGame();
+})();
+  </script>
+</body>
+</html>

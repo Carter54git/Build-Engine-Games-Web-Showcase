@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plunder &amp; Pillage</title>
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
+    }
+    #canvas {
+      display: block;
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      outline: none;
+      cursor: default;
+      background: #000;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+    #loader {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      background: #000;
+      transition: opacity 0.35s ease;
+    }
+    #loader.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+    #loader-text {
+      font-family: 'Courier New', monospace;
+      font-size: 15px;
+      letter-spacing: 3px;
+      color: #c8a858;
+      text-shadow: 0 0 10px rgba(120, 90, 40, 0.45);
+    }
+    #loader-bar {
+      width: min(420px, 72vw);
+      height: 10px;
+      border: 2px solid #5a4828;
+      background: #120f08;
+      box-shadow: 0 0 16px rgba(80, 60, 30, 0.35);
+    }
+    #loader-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #4a3818, #8c6838, #d8a878);
+      transition: width 0.12s ease-out;
+    }
+    #loader-pct {
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      color: #807060;
+      letter-spacing: 2px;
+    }
+  </style>
+</head>
+<body>
+  <div id="loader">
+    <div id="loader-text">Loading</div>
+    <div id="loader-bar"><div id="loader-fill"></div></div>
+    <div id="loader-pct">0%</div>
+  </div>
+  <canvas id="canvas" width="640" height="480" tabindex="0" title="Click to capture mouse for look"></canvas>
+
+  <script>
+(function () {
+  'use strict';
+
+  var params = new URLSearchParams(location.search);
+  var initialSpeed = parseFloat(params.get('speed'));
+  if (!isFinite(initialSpeed) || initialSpeed <= 0) initialSpeed = 0.93;
+  window.__nbSpeed = initialSpeed;
+
+  (function patchClocks() {
+    var perfOrig = performance.now.bind(performance);
+    var dateOrig = Date.now.bind(Date);
+    var p0 = perfOrig();
+    var d0 = dateOrig();
+    performance.now = function () { return p0 + (perfOrig() - p0) * window.__nbSpeed; };
+    Date.now      = function () { return d0 + (dateOrig() - d0) * window.__nbSpeed; };
+  })();
+  window.__rrGameActive = false;
+  window.__rrMenuOpen = false;
+  window.__rrRequestAudio = 0;
+  window.__rrMouseDx = 0;
+  window.__rrMouseDy = 0;
+  window.__rrMenuKeyPulse = [];
+  window.__rrGameKeyPulse = [];
+  window.__rrEscMenuPending = false;
+
+  var RR_SCAN = {
+    ArrowUp: 0xc8, ArrowDown: 0xd0, ArrowLeft: 0xcb, ArrowRight: 0xcd,
+    Enter: 0x1c, NumpadEnter: 0x9c, Escape: 0x01, Space: 0x39, Backspace: 0x0e,
+    Tab: 0x0f, Delete: 0xd3, Insert: 0xd2, Home: 0xc7, End: 0xcf, PageUp: 0xc9, PageDown: 0xd1,
+    KeyA: 0x1e, KeyB: 0x30, KeyC: 0x2e, KeyD: 0x20, KeyE: 0x12, KeyF: 0x21, KeyG: 0x22,
+    KeyH: 0x23, KeyI: 0x17, KeyJ: 0x24, KeyK: 0x25, KeyL: 0x26, KeyM: 0x32, KeyN: 0x31,
+    KeyO: 0x18, KeyP: 0x19, KeyQ: 0x10, KeyR: 0x13, KeyS: 0x1f, KeyT: 0x14, KeyU: 0x16,
+    KeyV: 0x2f, KeyW: 0x11, KeyX: 0x2d, KeyY: 0x15, KeyZ: 0x2c,
+    Digit0: 0x0b, Digit1: 0x02, Digit2: 0x03, Digit3: 0x04, Digit4: 0x05,
+    Digit5: 0x06, Digit6: 0x07, Digit7: 0x08, Digit8: 0x09, Digit9: 0x0a,
+    F1: 0x3b, F2: 0x3c, F3: 0x3d, F4: 0x3e, F5: 0x3f, F6: 0x40,
+    F7: 0x41, F8: 0x42, F9: 0x43, F10: 0x44, F11: 0x57, F12: 0x58
+  };
+
+  function requestWebAudio() {
+    window.__rrRequestAudio = 1;
+  }
+
+  function rrMenuKeyEvent(e, down) {
+    if (!window.__rrMenuOpen) return;
+    canvas.focus();
+    requestWebAudio();
+    var sc = RR_SCAN[e.code];
+    if (sc === undefined) return;
+    if (down) {
+      window.__rrMenuKeyPulse = window.__rrMenuKeyPulse || [];
+      window.__rrMenuKeyPulse.push(sc);
+    }
+    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter', ' ', 'Tab'].indexOf(e.key) >= 0)
+      e.preventDefault();
+  }
+
+  function rrGameKeyEvent(e, down) {
+    if (!down || !window.__rrGameActive || window.__rrMenuOpen) return;
+    if (e.key !== 'Escape') return;
+    window.__rrEscMenuPending = true;
+    window.__rrGameKeyPulse = window.__rrGameKeyPulse || [];
+    window.__rrGameKeyPulse.push(0x01);
+    e.preventDefault();
+    e.stopImmediatePropagation();
+  }
+
+  var canvas     = document.getElementById('canvas');
+  var loader     = document.getElementById('loader');
+  var loaderText = document.getElementById('loader-text');
+  var loaderFill = document.getElementById('loader-fill');
+  var loaderPct  = document.getElementById('loader-pct');
+  var buildTag   = String(Date.now());
+  var activeMod  = null;
+  var progressIv = null;
+  console.log('[Plunder] run.html', location.href, 'tag=' + buildTag);
+
+  function setLoadProgress(pct, label) {
+    pct = Math.max(0, Math.min(100, pct));
+    loaderFill.style.width = pct + '%';
+    loaderPct.textContent = Math.round(pct) + '%';
+    if (label) loaderText.textContent = label;
+  }
+
+  function dataDownloadPct(mod) {
+    if (!mod || !mod.dataFileDownloads) return null;
+    var loaded = 0;
+    var total = 0;
+    var d = mod.dataFileDownloads;
+    for (var k in d) {
+      if (!Object.prototype.hasOwnProperty.call(d, k)) continue;
+      loaded += d[k].loaded || 0;
+      total += d[k].total || 0;
+    }
+    if (total <= 0) return null;
+    return 100 * loaded / total;
+  }
+
+  function startProgressPoll() {
+    if (progressIv) return;
+    progressIv = setInterval(function () {
+      var p = dataDownloadPct(activeMod);
+      if (p != null) setLoadProgress(12 + p * 0.83, 'Loading data');
+    }, 80);
+  }
+
+  function stopProgressPoll() {
+    if (progressIv) clearInterval(progressIv);
+    progressIv = null;
+  }
+
+  function hideLoader() {
+    stopProgressPoll();
+    setLoadProgress(100, 'Starting');
+    loader.classList.add('hidden');
+  }
+  window.__rrBuildTag = buildTag;
+  var GAME_W = 640;
+  var GAME_H = 480;
+
+  function syncGameCanvas() {
+    canvas.width = GAME_W;
+    canvas.height = GAME_H;
+  }
+  syncGameCanvas();
+  window.addEventListener('resize', syncGameCanvas);
+
+  function loadScript(src) {
+    return new Promise(function (resolve, reject) {
+      var s = document.createElement('script');
+      s.src = src;
+      s.onload = resolve;
+      s.onerror = function () { reject(new Error('load failed: ' + src)); };
+      document.head.appendChild(s);
+    });
+  }
+
+  function loadSavesHelper() {
+    if (window.RRSaves && window.RRSaves.prefetch) {
+      return window.RRSaves.prefetch();
+    }
+    return loadScript('saves.js?v=' + buildTag).then(function () {
+      return window.RRSaves && window.RRSaves.prefetch ? window.RRSaves.prefetch() : undefined;
+    });
+  }
+
+  function enterImmersive() {
+    canvas.focus();
+    if (!window.__rrGameActive || window.__rrMenuOpen) return;
+    var pl = canvas.requestPointerLock || canvas.mozRequestPointerLock;
+    if (pl && document.pointerLockElement !== canvas) {
+      try { pl.call(canvas); } catch (e) {}
+    }
+  }
+
+  function onMouseMove(e) {
+    if (window.__rrMenuOpen) {
+      canvas.style.cursor = 'default';
+      return;
+    }
+    if (document.pointerLockElement !== canvas) return;
+    canvas.style.cursor = 'none';
+    window.__rrMouseDx += e.movementX || 0;
+    window.__rrMouseDy += e.movementY || 0;
+  }
+  document.addEventListener('mousemove', onMouseMove);
+  canvas.addEventListener('mousemove', onMouseMove);
+
+  document.addEventListener('pointerlockerror', function () {
+    console.warn('pointer lock failed');
+  });
+
+  document.addEventListener('pointerlockchange', function () {
+    if (window.__rrMenuOpen) {
+      canvas.style.cursor = 'default';
+      return;
+    }
+    if (window.__rrEscMenuPending && document.pointerLockElement !== canvas) {
+      window.__rrEscMenuPending = false;
+      window.__rrGameKeyPulse = window.__rrGameKeyPulse || [];
+      window.__rrGameKeyPulse.push(0x01);
+    }
+    if (window.__rrGameActive && !window.__rrMenuOpen && document.pointerLockElement !== canvas)
+      enterImmersive();
+  });
+
+  canvas.addEventListener('mousedown', function () {
+    canvas.focus();
+    requestWebAudio();
+    if (window.__rrMenuOpen) {
+      canvas.style.cursor = 'default';
+      return;
+    }
+    if (window.__rrGameActive && !window.__rrMenuOpen) enterImmersive();
+  });
+  canvas.addEventListener('click', function () {
+    canvas.focus();
+    requestWebAudio();
+    if (window.__rrGameActive && !window.__rrMenuOpen) enterImmersive();
+  });
+  document.addEventListener('keydown', function (e) {
+    canvas.focus();
+    requestWebAudio();
+    rrGameKeyEvent(e, true);
+    rrMenuKeyEvent(e, true);
+  }, true);
+  document.addEventListener('touchstart', function () { requestWebAudio(); }, { passive: true });
+  document.addEventListener('keyup', function (e) {
+    rrMenuKeyEvent(e, false);
+  });
+
+  window.__nbRemapping = false;
+  function remapCtoCtrl(e) {
+    if (window.__nbRemapping) return;
+    var isC = e.code === 'KeyC' || e.key === 'c' || e.key === 'C' || e.keyCode === 67;
+    if (!isC) return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    window.__nbRemapping = true;
+    try {
+      document.dispatchEvent(new KeyboardEvent(e.type, {
+        key: 'Control', code: 'ControlLeft',
+        keyCode: 17, which: 17, location: 1,
+        bubbles: true, cancelable: true,
+        repeat: e.repeat,
+        ctrlKey: e.type === 'keydown'
+      }));
+    } finally {
+      window.__nbRemapping = false;
+    }
+  }
+  window.addEventListener('keydown', remapCtoCtrl, true);
+  window.addEventListener('keyup',   remapCtoCtrl, true);
+
+  if (location.protocol === 'file:') {
+    setLoadProgress(0, 'Open via serve.py');
+    return;
+  }
+
+  function startGame() {
+    syncGameCanvas();
+    canvas.focus();
+    setLoadProgress(2, 'Preparing');
+    var useUserGrp = params.get('usergrp') === '1';
+
+    loadSavesHelper()
+      .then(function () {
+        if (!useUserGrp) return;
+        setLoadProgress(5, 'Your files');
+        return loadScript('/usergrp.js?v=' + buildTag).then(function () {
+          if (!window.BEGW_UserGrp) throw new Error('usergrp.js missing');
+          return BEGW_UserGrp.prepare();
+        });
+      })
+      .then(function () {
+        setLoadProgress(8, 'Loading scripts');
+        return loadScript('eduke32.js?v=' + buildTag);
+      })
+      .then(function () {
+        setLoadProgress(10, 'Loading');
+        syncGameCanvas();
+        if (typeof createEDuke32Module !== 'function') {
+          throw new Error('createEDuke32Module missing');
+        }
+        var gameArgs = ['-usecwd', '-cfg', 'PIRATE.CFG', '-nologo', '-gamegrp', 'pirate.grp'];
+        var preRunHooks = [];
+        if (useUserGrp && window.BEGW_UserGrp && BEGW_UserGrp.getPending()) {
+          gameArgs = BEGW_UserGrp.wrapArgs(gameArgs, BEGW_UserGrp.getPending());
+          preRunHooks.push(function () { BEGW_UserGrp.mount(this); });
+        }
+        return createEDuke32Module({
+          canvas: canvas,
+          webglContextAttributes: {
+            alpha: false,
+            depth: false,
+            stencil: false,
+            antialias: false,
+            preserveDrawingBuffer: true
+          },
+          preRun: preRunHooks,
+          arguments: gameArgs,
+          print: function (t) {
+            if (t) console.log(t);
+          },
+          printErr: function (t) {
+            if (!t) return;
+            if (/^\s*runtime\s+src/.test(t) || /^\s*date\s+time/.test(t)) return;
+            if (/INFO\|/.test(t)) { console.log(t); return; }
+            console.error(t);
+          },
+          locateFile: function (p) {
+            var tag = window.__rrBuildTag || buildTag;
+            if (/\.(wasm|data|js)$/i.test(p)) return p + '?v=' + tag;
+            return p;
+          },
+          setStatus: function (text) {
+            activeMod = this;
+            if (!text) return;
+            var frac = text.match(/(\d+)\s*\/\s*(\d+)/);
+            if (frac) {
+              var pct = 100 * (+frac[1] / +frac[2]);
+              setLoadProgress(12 + pct * 0.83, 'Loading data');
+              return;
+            }
+            if (/download/i.test(text)) {
+              startProgressPoll();
+              setLoadProgress(12, 'Loading data');
+              return;
+            }
+            if (/run/i.test(text)) {
+              setLoadProgress(96, 'Starting');
+            }
+          },
+          onRuntimeInitialized: function () {
+            if (useUserGrp && window.BEGW_UserGrp) BEGW_UserGrp.mount(this);
+            hideLoader();
+            syncGameCanvas();
+            canvas.focus();
+            if (window.RRSaves) {
+              RRSaves.attach(this);
+              RRSaves.loadIntoFs(this, function () {});
+            }
+          },
+          onAbort: function (r) {
+            console.error('abort:', r);
+            stopProgressPoll();
+            setLoadProgress(0, 'Wasm error: ' + r);
+          }
+        });
+      })
+      .catch(function (e) {
+        console.error(e);
+        stopProgressPoll();
+        var msg = (e && e.message) ? e.message : String(e);
+        setLoadProgress(0, 'Error: ' + msg);
+      });
+  }
+
+  startGame();
+})();
+  </script>
+</body>
+</html>
