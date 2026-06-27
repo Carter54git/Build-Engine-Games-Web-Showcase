@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Cache-Control" content="no-cache">
+  <title>Build Engine Games Web Showcase</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0c12;
+      --panel: #121824;
+      --border: #2a3a52;
+      --text: #c8d4e8;
+      --muted: #6a7a94;
+      --accent: #e8b040;
+      --accent-dim: #9a7028;
+      --ok: #58c878;
+      --warn: #e87840;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Share Tech Mono', 'Courier New', monospace;
+      line-height: 1.5;
+    }
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.12) 2px,
+        rgba(0,0,0,0.12) 4px
+      );
+      z-index: 1000;
+    }
+    .wrap {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 28px 20px 64px;
+      position: relative;
+      z-index: 1;
+    }
+    header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 36px;
+    }
+    .logo-badge {
+      display: block;
+      width: fit-content;
+      padding: 6px 14px;
+      border: 2px solid var(--accent-dim);
+      color: var(--accent);
+      font-size: 10px;
+      letter-spacing: 2px;
+      margin: 0 0 16px;
+      white-space: nowrap;
+    }
+    .title-with-mascot {
+      --title-fs: clamp(14px, 3.2vw, 22px);
+      --mascot-h: calc(3.2 * var(--title-fs));
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      gap: clamp(12px, 2.5vw, 20px);
+      width: 100%;
+      max-width: 920px;
+      margin: 0 auto 12px;
+    }
+    .title-with-mascot h1 {
+      font-family: 'Press Start 2P', monospace;
+      font-size: var(--title-fs);
+      line-height: 1.6;
+      color: var(--accent);
+      text-shadow: 0 0 24px rgba(232, 176, 64, 0.35);
+      margin: 0;
+      text-align: center;
+      flex: 0 1 auto;
+    }
+    .title-mascot {
+      height: var(--mascot-h);
+      width: auto;
+      flex: 0 0 auto;
+      display: block;
+      transform: scale(1.35);
+      transform-origin: center center;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      pointer-events: none;
+      user-select: none;
+    }
+    .title-mascot--balance {
+      visibility: hidden;
+    }
+    .tagline {
+      color: var(--muted);
+      font-size: 14px;
+      max-width: 640px;
+      margin: 0;
+      text-align: center;
+    }
+    .showcase-banner {
+      margin: 0 0 32px;
+      border: 3px solid var(--border);
+      background: #0c1018;
+      box-shadow: inset 0 0 0 1px #1e2838, 0 8px 28px rgba(0,0,0,0.35);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 8px;
+    }
+    .showcase-banner img {
+      display: block;
+      width: auto;
+      height: auto;
+      max-width: 100%;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+    .hero {
+      background: linear-gradient(180deg, #161e2c 0%, var(--panel) 100%);
+      border: 3px solid var(--border);
+      box-shadow: inset 0 0 0 1px #1e2838, 0 12px 40px rgba(0,0,0,0.45);
+      padding: 28px 24px 32px;
+      margin-bottom: 40px;
+    }
+    .hero h2 {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 11px;
+      color: var(--accent);
+      margin: 0 0 20px;
+      letter-spacing: 1px;
+    }
+    .pick-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+    .btn-retro {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 9px;
+      padding: 14px 26px;
+      border: 3px solid var(--accent-dim);
+      cursor: pointer;
+      color: var(--accent);
+      background: #1a1810;
+      position: relative;
+      letter-spacing: 1px;
+      text-shadow: 2px 2px 0 #3a2810, 0 0 12px rgba(232, 176, 64, 0.25);
+      box-shadow:
+        inset 3px 3px 0 #5a4820,
+        inset -3px -3px 0 #0e0c08,
+        4px 4px 0 #0a0c12;
+      transition: transform 0.06s, box-shadow 0.06s, background 0.1s, color 0.1s;
+      image-rendering: pixelated;
+    }
+    .btn-retro:hover:not(:disabled) {
+      background: #2a2218;
+      color: #f0c860;
+      transform: translate(-1px, -1px);
+      box-shadow:
+        inset 3px 3px 0 #7a6030,
+        inset -3px -3px 0 #0e0c08,
+        5px 5px 0 #0a0c12;
+    }
+    .btn-retro:active:not(:disabled) {
+      transform: translate(2px, 2px);
+      box-shadow:
+        inset -2px -2px 0 #5a4820,
+        inset 2px 2px 0 #0e0c08,
+        1px 1px 0 #0a0c12;
+    }
+    .btn-retro:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      transform: none;
+      color: #6a5a38;
+      background: #141210;
+      border-color: #3a3020;
+      box-shadow:
+        inset 2px 2px 0 #2a2218,
+        inset -2px -2px 0 #0a0808,
+        2px 2px 0 #0a0c12;
+    }
+    #btn-launch {
+      font-size: 10px;
+      padding: 16px 34px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      min-width: 160px;
+    }
+    #btn-launch::before {
+      content: '';
+      display: block;
+      width: 0;
+      height: 0;
+      border-top: 5px solid transparent;
+      border-bottom: 5px solid transparent;
+      border-left: 8px solid currentColor;
+      flex-shrink: 0;
+    }
+    #btn-launch:hover:not(:disabled) {
+      background: #2a2218;
+      color: #f0c860;
+      box-shadow:
+        inset 3px 3px 0 #7a6030,
+        inset -3px -3px 0 #0e0c08,
+        5px 5px 0 #0a0c12;
+    }
+    #btn-launch:active:not(:disabled) {
+      box-shadow:
+        inset -2px -2px 0 #5a4820,
+        inset 2px 2px 0 #0e0c08,
+        1px 1px 0 #0a0c12;
+    }
+    #btn-launch:disabled {
+      color: #6a5a38;
+      background: #141210;
+      border-color: #3a3020;
+      box-shadow:
+        inset 2px 2px 0 #2a2218,
+        inset -2px -2px 0 #0a0808,
+        2px 2px 0 #0a0c12;
+    }
+    .btn-secondary {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 13px;
+      padding: 12px 16px;
+      border: 2px solid var(--border);
+      background: #0e1420;
+      color: var(--text);
+      cursor: pointer;
+    }
+    .btn-secondary:hover { border-color: var(--accent-dim); color: var(--accent); }
+    input[type="file"] { display: none; }
+    .file-info {
+      min-height: 52px;
+      padding: 12px 14px;
+      background: #0c1018;
+      border: 1px dashed var(--border);
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .file-info.ok { border-color: var(--ok); color: var(--ok); }
+    .file-info.warn { border-color: var(--warn); color: var(--warn); }
+    .detected {
+      margin-top: 14px;
+      padding: 12px 14px;
+      background: #0e1828;
+      border-left: 4px solid var(--accent);
+      display: none;
+    }
+    .detected.visible { display: block; }
+    .detected strong { color: var(--accent); }
+    .launch-row {
+      margin-top: 18px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      justify-content: center;
+    }
+    .help-box {
+      margin-top: 22px;
+      padding: 16px 18px;
+      background: #0c1018;
+      border: 1px solid var(--border);
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .help-box h3 {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 9px;
+      color: var(--text);
+      margin: 0 0 12px;
+    }
+    .help-box ul { margin: 0; padding-left: 18px; }
+    .help-box li { margin-bottom: 6px; }
+    .help-box code {
+      color: var(--accent);
+      background: #141c28;
+      padding: 1px 5px;
+    }
+    section.games {
+      margin-top: 12px;
+    }
+    section.games h2 {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 11px;
+      color: var(--accent);
+      margin: 0 0 8px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid var(--border);
+    }
+    .games-sub {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 24px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 20px;
+    }
+    .card {
+      background: var(--panel);
+      border: 2px solid var(--border);
+      overflow: hidden;
+      transition: border-color 0.15s, transform 0.15s;
+    }
+    .card:hover {
+      border-color: var(--accent-dim);
+      transform: translateY(-2px);
+    }
+    .card.selected {
+      border-color: var(--accent);
+      box-shadow: 0 0 20px rgba(232, 176, 64, 0.2);
+    }
+    .shot {
+      aspect-ratio: 16 / 10;
+      display: flex;
+      align-items: flex-end;
+      padding: 14px;
+      position: relative;
+      overflow: hidden;
+      background: #0c1018 center / cover no-repeat;
+    }
+    .shot::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(0deg, rgba(0,0,0,0.75) 0%, transparent 55%);
+    }
+    .shot-title {
+      position: relative;
+      z-index: 1;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 9px;
+      line-height: 1.5;
+      color: #fff;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+    }
+    .card-body { padding: 14px 16px 18px; }
+    .card-body h3 {
+      margin: 0 0 6px;
+      font-size: 15px;
+      color: var(--text);
+    }
+    .card-body p {
+      margin: 0 0 10px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+    .card-body .req {
+      font-size: 11px;
+      color: var(--accent-dim);
+    }
+    .card-body .req code { color: var(--accent); }
+    .card-body .files {
+      margin-top: 8px;
+      font-size: 10px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+    .card-body .files span { color: var(--ok); }
+    .card-body .files .miss { color: var(--warn); }
+    .lang-bar {
+      position: fixed;
+      top: 14px;
+      right: 16px;
+      z-index: 1001;
+      display: flex;
+      gap: 6px;
+    }
+    .lang-btn {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 8px;
+      padding: 8px 10px;
+      border: 2px solid var(--border);
+      background: var(--panel);
+      color: var(--muted);
+      cursor: pointer;
+    }
+    .lang-btn:hover { border-color: var(--accent-dim); color: var(--text); }
+    .lang-btn.active {
+      border-color: var(--accent);
+      color: var(--accent);
+      box-shadow: 0 0 12px rgba(232, 176, 64, 0.25);
+    }
+    @media (max-width: 600px) {
+      .btn-retro { width: 100%; text-align: center; }
+    }
+    .site-footer {
+      text-align: center;
+      margin-top: 40px;
+      padding-top: 28px;
+      border-top: 1px solid var(--border);
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .site-footer a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    .site-footer a:hover { text-decoration: underline; }
+    .live-demo {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 18px;
+      padding: 12px 20px;
+      border: 2px solid var(--ok);
+      background: rgba(88, 200, 120, 0.08);
+      color: var(--ok);
+      text-decoration: none;
+      font-size: 13px;
+      letter-spacing: 0.5px;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .live-demo:hover {
+      background: rgba(88, 200, 120, 0.16);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .live-demo strong {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 8px;
+      color: inherit;
+    }
+  </style>
+</head>
+<body>
+  <div class="lang-bar">
+    <button type="button" class="lang-btn active" id="lang-en" data-lang="en">EN</button>
+    <button type="button" class="lang-btn" id="lang-ru" data-lang="ru">RU</button>
+  </div>
+  <div class="wrap">
+    <header>
+      <div class="logo-badge">BUILD ENGINE · WEBGL · WASM</div>
+      <div class="title-with-mascot">
+        <img class="title-mascot title-mascot--balance" src="screenshots/duke-mascot.gif" alt="" aria-hidden="true">
+        <h1>Build Engine Games<br>Web Showcase</h1>
+        <img class="title-mascot" src="screenshots/duke-mascot.gif" alt="">
+      </div>
+      <p class="tagline" id="tagline"></p>
+      <a class="live-demo" id="live-demo" href="https://buildenginegames.online/" target="_blank" rel="noopener noreferrer">
+        <strong id="live-demo-label">LIVE DEMO</strong>
+        <span>buildenginegames.online</span>
+      </a>
+    </header>
+
+    <div class="showcase-banner">
+      <img src="screenshots/showcase-banner.gif" alt="Build Engine gameplay" loading="lazy" decoding="async">
+    </div>
+
+    <div class="hero">
+      <h2 id="hero-title"></h2>
+      <div class="pick-row">
+        <button type="button" class="btn-retro" id="btn-grp"></button>
+        <button type="button" class="btn-secondary" id="btn-folder"></button>
+        <input type="file" id="inp-grp" accept=".grp,.GRP,.rff,.RFF,.dat,.DAT,.art,.ART,.zip,.ZIP">
+        <input type="file" id="inp-folder" webkitdirectory multiple>
+      </div>
+      <div class="file-info" id="file-info"></div>
+      <div class="detected" id="detected"></div>
+      <div class="launch-row">
+        <button type="button" class="btn-retro" id="btn-launch" disabled>PLAY</button>
+      </div>
+    </div>
+
+    <section class="games">
+      <h2 id="games-title"></h2>
+      <p class="games-sub" id="games-sub"></p>
+      <div class="grid" id="grid"></div>
+    </section>
+
+    <footer class="site-footer">
+      © 2026 Developed by <a href="https://github.com/Carter54git" target="_blank" rel="noopener noreferrer">Carter54</a>
+    </footer>
+  </div>
+
+  <script>
+(function () {
+  'use strict';
+
+  var I18N = {
+    en: {
+      tagline: 'Drop your GRP or game folder — we detect the game and verify ownership, then play.',
+      heroTitle: '▶ VERIFY GAME FILES',
+      btnFile: 'SELECT GAME FILE',
+      btnFolder: 'SELECT GAME FOLDER',
+      fileInfoIdle: 'Select your GRP or original game folder — no need to pick a game first.',
+      gamesTitle: 'SUPPORTED GAMES',
+      gamesSub: 'The matching card highlights automatically after you select files. Press PLAY when verified.',
+      play: 'PLAY',
+      noFile: 'No file selected.',
+      loaded: 'Loaded:',
+      filesFromFolder: 'files from folder',
+      selected: 'Selected:',
+      selectedHint: '— point to GRP/folder to verify.',
+      verified: '✓ Verified:',
+      detected: 'Detected:',
+      verifiedOk: 'Files found. Press PLAY or click the card again.',
+      missing: 'Missing:',
+      noDetect: 'Could not auto-detect game.',
+      noDetectHint: 'Click a card below, then play.',
+      missingFiles: 'Missing files:',
+      keyFound: '✓ key files found',
+      requiredOk: '✓ required OK',
+      recommended: 'Recommended:',
+      useFolder: '— use Select game folder',
+      fileProtocol: 'Open via serve.py — do not use file://',
+      liveDemo: 'LIVE DEMO'
+    },
+    ru: {
+      tagline: 'Укажите GRP или папку игры — определим игру и проверим владение, затем запуск.',
+      heroTitle: '▶ ПРОВЕРКА ФАЙЛОВ',
+      btnFile: 'ВЫБРАТЬ ФАЙЛ',
+      btnFolder: 'ВЫБРАТЬ ПАПКУ',
+      fileInfoIdle: 'Укажите GRP или папку с оригинальными файлами — выбирать игру заранее не нужно.',
+      gamesTitle: 'ПОДДЕРЖИВАЕМЫЕ ИГРЫ',
+      gamesSub: 'После выбора файлов подсветится нужная карточка. Когда проверка пройдена — нажмите ИГРАТЬ.',
+      play: 'ИГРАТЬ',
+      noFile: 'Файл не выбран.',
+      loaded: 'Загружено:',
+      filesFromFolder: 'файлов из папки',
+      selected: 'Выбрано:',
+      selectedHint: '— укажите GRP/папку для проверки.',
+      verified: '✓ Проверено:',
+      detected: 'Определено:',
+      verifiedOk: 'Файлы найдены. Нажмите PLAY или кликните карточку ещё раз.',
+      missing: 'Не хватает:',
+      noDetect: 'Не удалось определить игру.',
+      noDetectHint: 'Выберите карточку ниже, затем запустите.',
+      missingFiles: 'Не хватает файлов:',
+      keyFound: '✓ ключевые файлы найдены',
+      requiredOk: '✓ обязательные OK',
+      recommended: 'Рекомендуется:',
+      useFolder: '— используйте «Выбрать папку»',
+      fileProtocol: 'Откройте через serve.py — не file://',
+      liveDemo: 'ОНЛАЙН ДЕМО'
+    }
+  };
+
+  var lang = localStorage.getItem('begw-lang') || 'en';
+  if (lang !== 'en' && lang !== 'ru') lang = 'en';
+
+  function t(key) {
+    return (I18N[lang] && I18N[lang][key]) || I18N.en[key] || key;
+  }
+
+  function txt(obj) {
+    if (!obj) return '';
+    if (typeof obj === 'string') return obj;
+    return obj[lang] || obj.en || '';
+  }
+
+  var GAMES = [
+    {
+      id: 'blood', slug: '8766-blood', title: 'Blood', year: '1997',
+      engine: 'NBlood', img: 'blood.jpg',
+      blurb: { en: 'Cult horror FPS — Caleb vs. the Cabal on Build.', ru: 'Культовый хоррор-FPS — Кaleb против Кабала на Build.' },
+      required: { en: 'BLOOD.RFF + BLOOD.INI (+ full game folder)', ru: 'BLOOD.RFF + BLOOD.INI (+ вся папка игры)' },
+      detect: { names: ['BLOOD.RFF'], sizes: [9570681] },
+      gamegrpArg: null,
+      mustHave: ['BLOOD.RFF', 'BLOOD.INI'],
+      wantFolder: true,
+      extras: ['BLOOD.CFG', 'GUI.RFF', 'SOUNDS.RFF', 'TABLES.DAT', 'SURFACE.DAT', 'VOXEL.DAT', 'TILES000.ART']
+    },
+    {
+      id: 'blood-lenin', slug: '8770-blood-lenin', title: 'Lenin: First Blood', year: '1997',
+      engine: 'NBlood', img: 'bloodlenin.jpg',
+      blurb: { en: 'Russian Fargus localization — parody episodes, menu & voice (bundled build).', ru: 'Русская локализация Fargus — пародийные эпизоды, меню и озвучка (встроенная сборка).' },
+      required: { en: 'BLOOD.INI from Fargus + standard Blood 1.21 files', ru: 'BLOOD.INI из Fargus + файлы Blood 1.21' },
+      detect: { names: ['BLOOD.INI'], sizes: [10870] },
+      gamegrpArg: null,
+      mustHave: ['BLOOD.RFF', 'BLOOD.INI'],
+      wantFolder: true,
+      extras: ['BLOOD.CFG', 'GUI.RFF', 'SOUNDS.RFF', 'TABLES.DAT', 'SURFACE.DAT', 'VOXEL.DAT', 'TILES000.ART']
+    },
+    {
+      id: 'redneck', slug: '8767-redneck', title: 'Redneck Rampage', year: '1997',
+      engine: 'Rednukem', img: 'rrampage.jpg',
+      blurb: { en: 'Hillbilly horror FPS on the Build Engine.', ru: 'Хоррор-FPS на Build Engine.' },
+      required: { en: 'REDNECK.GRP + REDNECK.CFG + CON/DAT', ru: 'REDNECK.GRP + REDNECK.CFG + CON/DAT' },
+      detect: { names: ['REDNECK.GRP'], sizes: [141174222] },
+      gamegrpArg: 'REDNECK.GRP',
+      mustHave: ['REDNECK.GRP'],
+      wantFolder: true,
+      extras: ['REDNECK.CFG', 'GAME.CON', 'USER.CON', 'TABLES.DAT', 'LOOKUP.DAT', 'PALETTE.DAT']
+    },
+    {
+      id: 'duke3d', slug: '8776-duke3d', title: 'Duke Nukem 3D', year: '1996',
+      engine: 'EDuke32', img: 'duke3d.jpg',
+      blurb: { en: 'The king of Build — Hail to the king, baby!', ru: 'Король Build — Hail to the king, baby!' },
+      required: { en: 'DUKE3D.GRP + DUKE3D.CFG', ru: 'DUKE3D.GRP + DUKE3D.CFG' },
+      detect: { names: ['DUKE3D.GRP'] },
+      gamegrpArg: 'DUKE3D.GRP',
+      mustHave: ['DUKE3D.GRP'],
+      wantFolder: true,
+      extras: ['DUKE3D.CFG', 'GAME.CON', 'USER.CON']
+    },
+    {
+      id: 'swarrior', slug: '8775-swarrior', title: 'Shadow Warrior', year: '1997',
+      engine: 'VoidSW', img: 'shadowwarrior.jpg',
+      blurb: { en: 'Lo Wang\'s katana-driven Build classic.', ru: 'Классика Build с катаной Ло Вана.' },
+      required: { en: 'SW.GRP + SW.CFG', ru: 'SW.GRP + SW.CFG' },
+      detect: { names: ['SW.GRP'] },
+      gamegrpArg: 'SW.GRP',
+      mustHave: ['SW.GRP'],
+      wantFolder: true,
+      extras: ['SW.CFG', 'GAME.CON', 'USER.CON']
+    },
+    {
+      id: 'nam', slug: '8768-nam', title: 'NAM', year: '1998',
+      engine: 'Rednukem', img: 'nam.jpg',
+      blurb: { en: 'Vietnam combat sim built on RR tech.', ru: 'Вьетнамский симулятор на движке RR.' },
+      required: { en: 'NAM.GRP + NAM.CFG + CON', ru: 'NAM.GRP + NAM.CFG + CON' },
+      detect: { names: ['NAM.GRP'] },
+      gamegrpArg: 'NAM.GRP',
+      mustHave: ['NAM.GRP'],
+      wantFolder: true,
+      extras: ['NAM.CFG', 'GAME.CON', 'USER.CON']
+    },
+    {
+      id: 'ww2gi', slug: '8769-ww2gi', title: 'WW2 GI', year: '1999',
+      engine: 'Rednukem', img: 'wwiigi.jpg',
+      blurb: { en: 'World War II GI — NAM sequel campaign.', ru: 'WW2 GI — продолжение NAM.' },
+      required: { en: 'WW2GI.GRP + WW2GI.CFG', ru: 'WW2GI.GRP + WW2GI.CFG' },
+      detect: { names: ['WW2GI.GRP'] },
+      gamegrpArg: 'WW2GI.GRP',
+      mustHave: ['WW2GI.GRP'],
+      wantFolder: true,
+      extras: ['WW2GI.CFG', 'GAME.CON', 'USER.CON']
+    },
+    {
+      id: 'ww2-platoon', slug: '8791-ww2-platoon', title: 'WW2 GI: Platoon Leader', year: '1999',
+      engine: 'Rednukem', img: 'platoon.jpg',
+      blurb: { en: 'Platoon Leader addon for WW2 GI — three single-player missions (TNT, 1999).', ru: 'Аддон Platoon Leader для WW2 GI — три одиночных миссии (TNT, 1999).' },
+      required: { en: 'WW2GI.GRP + PLATOONL.DAT + PLATOONL.DEF', ru: 'WW2GI.GRP + PLATOONL.DAT + PLATOONL.DEF' },
+      detect: { names: ['PLATOONL.DAT', 'platoonl.dat', 'WW2GI.GRP'] },
+      gamegrpArg: 'platoonl.dat',
+      mustHave: ['platoonl.dat', 'ww2gi.grp'],
+      wantFolder: true,
+      extras: ['WW2GI.CFG', 'PLATOONL.DEF', 'ENHANCE.CON']
+    },
+    {
+      id: 'rrridesagain', slug: '8772-rrridesagain', title: 'Redneck Rampage: Rides Again', year: '1998',
+      engine: 'Rednukem', img: 'rrridesagain.jpg',
+      blurb: { en: 'Expansion — alien abduction sequel.', ru: 'Дополнение — продолжение с пришельцами.' },
+      required: { en: 'REDNECK.GRP ~183 MB (different CRC!)', ru: 'REDNECK.GRP ~183 МБ (другой CRC!)' },
+      detect: { names: ['REDNECK.GRP'], sizes: [191798609] },
+      gamegrpArg: 'REDNECK.GRP',
+      mustHave: ['REDNECK.GRP'],
+      wantFolder: true,
+      extras: ['REDNECK.CFG', 'GAME.CON', 'USER.CON']
+    },
+    {
+      id: 'rrroute66', slug: '8773-rrroute66', title: 'Redneck Rampage: Route 66', year: '1997',
+      engine: 'Rednukem', img: 'rrroute66.jpg',
+      blurb: { en: 'Highway add-on — Route 66 map pack.', ru: 'Аддон Route 66 — пак карт.' },
+      required: { en: 'ROUTE66 folder (*.MAP)', ru: 'папка ROUTE66 (*.MAP)' },
+      detect: { route66: true },
+      verify: 'route66',
+      mustHave: [],
+      wantFolder: true,
+      extras: []
+    },
+    {
+      id: 'powerslave', slug: '8774-powerslave', title: 'Powerslave', year: '1996',
+      engine: 'PCExhumed', img: 'powerslave.jpg',
+      blurb: { en: 'Egyptian FPS — STUFF.DAT, not GRP.', ru: 'Египетский FPS — STUFF.DAT, не GRP.' },
+      required: { en: 'STUFF.DAT (full game folder)', ru: 'STUFF.DAT (вся папка игры)' },
+      detect: { names: ['STUFF.DAT'] },
+      gamegrpArg: null,
+      mustHave: ['STUFF.DAT'],
+      wantFolder: true,
+      extras: ['BOOK.MOV', 'DEMO.VCR', 'pcexhumed.cfg']
+    },
+    {
+      id: 'liquidator', slug: '8778-liquidator', title: 'Liquidator 3D', year: '1998',
+      engine: 'EDuke32', img: 'liquidator.jpg',
+      blurb: { en: 'Russian Build total conversion — Akella, 1998.', ru: 'Российская тотальная конверсия на Build — Акелла, 1998.' },
+      required: { en: 'liquid.grp (Liquid.pak) + LIQUID.CFG', ru: 'liquid.grp (Liquid.pak) + LIQUID.CFG' },
+      detect: { names: ['liquid.grp', 'Liquid.pak', 'LIQUID.PAK'] },
+      gamegrpArg: 'liquid.grp',
+      mustHave: ['liquid.grp'],
+      wantFolder: true,
+      extras: ['LIQUID.CFG']
+    },
+    {
+      id: 'sw-twindragon', slug: '8787-sw-twindragon', title: 'Shadow Warrior: Twin Dragon', year: '1998',
+      engine: 'VoidSW', img: 'twindragon.jpg',
+      blurb: { en: 'Twin Dragon addon for registered Shadow Warrior — Level Infinity, 1998.', ru: 'Аддон Twin Dragon для зарегистрированного Shadow Warrior — Level Infinity, 1998.' },
+      required: { en: 'SW.GRP + Twin Dragon files (tiles021.art, $WHIRL.MAP, …)', ru: 'SW.GRP + файлы Twin Dragon (tiles021.art, $WHIRL.MAP, …)' },
+      detect: { names: ['SW.GRP', 'tiles021.art', 'Tiles021.art', '$WHIRL.MAP', '$whirl.map'] },
+      gamegrpArg: 'sw.grp',
+      mustHave: ['SW.GRP'],
+      wantFolder: true,
+      extras: ['SW.CFG', 'Tiles021.art', 'tiles021.art', '$WHIRL.MAP']
+    },
+    {
+      id: 'sw-wanton', slug: '8788-sw-wanton', title: 'Shadow Warrior: Wanton Destruction', year: '2005',
+      engine: 'VoidSW', img: 'swwanton.jpg',
+      blurb: { en: 'Wanton Destruction addon for Shadow Warrior — 3D Realms, 2005.', ru: 'Аддон Wanton Destruction для Shadow Warrior — 3D Realms, 2005.' },
+      required: { en: 'SW.GRP + WantDest.grp', ru: 'SW.GRP + WantDest.grp' },
+      detect: { names: ['SW.GRP', 'WantDest.grp', 'wantdest.grp'] },
+      gamegrpArg: 'sw.grp',
+      mustHave: ['SW.GRP', 'WantDest.grp'],
+      wantFolder: true,
+      extras: ['SW.CFG']
+    },
+    {
+      id: 'plunder', slug: '8786-plunder', title: 'Plunder & Pillage', year: '2001',
+      engine: 'EDuke32', img: 'plunder.jpg',
+      blurb: { en: 'Pirate-themed Duke3D total conversion — Petrilla Entertainment, 2001.', ru: 'Пиратский TC на Duke3D — Petrilla Entertainment, 2001.' },
+      required: { en: 'pirate.grp (Pirate.grp) + PIRATE.CFG', ru: 'pirate.grp (Pirate.grp) + PIRATE.CFG' },
+      detect: { names: ['pirate.grp', 'Pirate.grp', 'PIRATE.GRP'] },
+      gamegrpArg: 'pirate.grp',
+      mustHave: ['pirate.grp'],
+      wantFolder: true,
+      extras: ['PIRATE.CFG', 'Game.con', 'User.con', 'Defs.con']
+    },
+    {
+      id: 'quest-hussein', slug: '8789-quest-hussein', title: 'Quest For Hussein', year: '2002',
+      engine: 'EDuke32', img: 'hussein.jpg',
+      blurb: { en: 'Duke3D total conversion — Petrilla Entertainment, 2002.', ru: 'TC на Duke3D — Petrilla Entertainment, 2002.' },
+      required: { en: 'quest2.grp (QUEST2.GRP) + QUEST2.CFG', ru: 'quest2.grp (QUEST2.GRP) + QUEST2.CFG' },
+      detect: { names: ['quest2.grp', 'QUEST2.GRP'] },
+      gamegrpArg: 'quest2.grp',
+      mustHave: ['quest2.grp'],
+      wantFolder: true,
+      extras: ['QUEST2.CFG', 'Game.con', 'User.con', 'Defs.con', 'q4sh.rts']
+    },
+    {
+      id: 'quest-alqaeda', slug: '8790-quest-alqaeda', title: "Quest For Al-Qa'eda", year: '2002',
+      engine: 'EDuke32', img: 'alqaeda.jpg',
+      blurb: { en: 'The Hunt for Bin Laden — Duke3D TC, Petrilla Entertainment, 2002.', ru: 'The Hunt for Bin Laden — TC на Duke3D, Petrilla Entertainment, 2002.' },
+      required: { en: 'quest1.grp (QUEST1.GRP) + QUEST1.CFG', ru: 'quest1.grp (QUEST1.GRP) + QUEST1.CFG' },
+      detect: { names: ['quest1.grp', 'QUEST1.GRP'] },
+      gamegrpArg: 'quest1.grp',
+      mustHave: ['quest1.grp'],
+      wantFolder: true,
+      extras: ['QUEST1.CFG', 'Game.con', 'User.con', 'Defs.con', 'q4al.rts']
+    },
+    {
+      id: 'duke-vacation', slug: '8779-duke-vacation', title: "Duke Caribbean: Life's a Beach", year: '1997',
+      engine: 'EDuke32', img: 'duke3dcarribean.jpg',
+      blurb: { en: 'Tropical vacation episode — sun, sand, and pig cops.', ru: 'Карибский аддон — солнце, пляж и копы-свиньи.' },
+      required: { en: 'VACATION.GRP', ru: 'VACATION.GRP' },
+      detect: { names: ['VACATION.GRP'] },
+      mustHave: ['VACATION.GRP'],
+      wantFolder: true,
+      extras: ['DUKE3D.GRP', 'DUKE3D.CFG']
+    },
+    {
+      id: 'duke-dc', slug: '8780-duke-dc', title: 'Duke it out in DC', year: '1997',
+      engine: 'EDuke32', img: 'duke3ddc.jpg',
+      blurb: { en: 'Political action in Washington D.C.', ru: 'Политический аддон в Вашингтоне.' },
+      required: { en: 'Duke it out in DC folder (DUKEDC*.MAP)', ru: 'папка Duke it out in DC (DUKEDC*.MAP)' },
+      detect: { dukedc: true },
+      verify: 'dukedc',
+      mustHave: [],
+      wantFolder: true,
+      extras: ['DUKE3D.GRP', 'DUKE3D.CFG']
+    },
+    {
+      id: 'duke-nwinter', slug: '8781-duke-nwinter', title: 'Nuclear Winter', year: '1997',
+      engine: 'EDuke32', img: 'duke3dwinter.jpg',
+      blurb: { en: 'Frozen wasteland — Santa and snowmen.', ru: 'Ядерная зима — Санта и снеговики.' },
+      required: { en: 'NWINTER.GRP', ru: 'NWINTER.GRP' },
+      detect: { names: ['NWINTER.GRP'] },
+      mustHave: ['NWINTER.GRP'],
+      wantFolder: true,
+      extras: ['NWINTER.CON', 'DUKE3D.GRP']
+    },
+    {
+      id: 'duke-penthouse', slug: '8782-duke-penthouse', title: 'Penthouse Paradise', year: '1997',
+      engine: 'EDuke32', img: 'duke3dpenthouse.jpg',
+      blurb: { en: 'Adults-only Penthouse episode.', ru: 'Эпизод Penthouse Paradise.' },
+      required: { en: 'ppakgame.con or Penthouse folder', ru: 'ppakgame.con или папка Penthouse' },
+      detect: { names: ['PPAKGAME.CON', 'PENTHOUS.MAP'], anyName: true },
+      verify: 'penthouse',
+      mustHave: [],
+      wantFolder: true,
+      extras: ['ppakuser.con', 'ppakdefs.con']
+    },
+    {
+      id: 'tekwar', slug: '8777-tekwar', title: 'William Shatner\'s TekWar', year: '1995',
+      engine: 'eTekWar', img: 'tekwar.jpg',
+      blurb: { en: 'Cyberpunk FMV shooter — loose files, no GRP.', ru: 'Киберпанк-FMV — отдельные файлы, без GRP.' },
+      required: { en: 'TILES000.ART + SOUNDS + SONGS', ru: 'TILES000.ART + SOUNDS + SONGS' },
+      detect: { names: ['TILES000.ART'] },
+      gamegrpArg: null,
+      mustHave: ['TILES000.ART'],
+      wantFolder: true,
+      extras: ['SOUNDS', 'SONGS', 'etekwar.cfg', 'SMK']
+    },
+    {
+      id: 'witchaven', slug: '8783-witchaven', title: 'Witchaven', year: '1995',
+      engine: 'EWitchaven', img: 'witchaven.jpg',
+      blurb: { en: 'Dark fantasy Build FPS — loose files, no GRP.', ru: 'Тёмное фэнтези на Build — отдельные файлы, без GRP.' },
+      required: { en: 'TILES000.ART + LEVEL1.MAP + TABLES.DAT', ru: 'TILES000.ART + LEVEL1.MAP + TABLES.DAT' },
+      detect: { names: ['TILES000.ART', 'LEVEL1.MAP'] },
+      gamegrpArg: null,
+      mustHave: ['TILES000.ART', 'LEVEL1.MAP'],
+      wantFolder: true,
+      extras: ['TABLES.DAT', 'LOOKUP.DAT', 'PALETTE.DAT', 'MENUPAL.DAT', 'JOESND', 'SONGS']
+    },
+    {
+      id: 'witchaven2', slug: '8784-witchaven2', title: 'Witchaven II', year: '1996',
+      engine: 'EWitchaven', img: 'witchaven2.jpg',
+      blurb: { en: 'Sequel — loose files, no GRP. Same engine as Witchaven I.', ru: 'Продолжение — отдельные файлы, без GRP. Тот же движок, что у Witchaven I.' },
+      required: { en: 'TILES000.ART + LEVEL1.MAP + TABLES.DAT', ru: 'TILES000.ART + LEVEL1.MAP + TABLES.DAT' },
+      detect: { names: ['TILES000.ART', 'LEVEL1.MAP', 'WH2.EXE'], anyName: true },
+      gamegrpArg: null,
+      mustHave: ['TILES000.ART', 'LEVEL1.MAP'],
+      wantFolder: true,
+      extras: ['TABLES.DAT', 'LOOKUP.DAT', 'PALETTE.DAT', 'MENUPAL.DAT', 'JOESND', 'F_SONGS', 'W_SONGS']
+    }
+  ];
+
+  var selectedGame = null;
+  var pendingFiles = null;
+  var detectedGameId = null;
+  var verifiedFor = null;
+
+  var grid = document.getElementById('grid');
+  var fileInfo = document.getElementById('file-info');
+  var detected = document.getElementById('detected');
+  var btnLaunch = document.getElementById('btn-launch');
+
+  function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function renderGrid() {
+    grid.innerHTML = GAMES.map(function (g) {
+      var sel = detectedGameId === g.id ? ' selected' : '';
+      return '<article class="card' + sel + '" data-id="' + g.id + '">' +
+        '<div class="shot" style="background-image:url(\'screenshots/' + esc(g.img) + '\')">' +
+          '<div class="shot-title">' + esc(g.title) + '</div>' +
+        '</div>' +
+        '<div class="card-body">' +
+          '<h3>' + esc(g.title) + ' <span style="color:var(--muted);font-weight:normal">(' + g.year + ')</span></h3>' +
+          '<p>' + esc(txt(g.blurb)) + '</p>' +
+          '<div class="req"><code>' + esc(txt(g.required)) + '</code> · ' + esc(g.engine) + '</div>' +
+          '<div class="files" id="files-' + g.id + '"></div>' +
+        '</div></article>';
+    }).join('');
+    grid.querySelectorAll('.card').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var id = el.getAttribute('data-id');
+        var game = GAMES.find(function (g) { return g.id === id; });
+        if (verifiedFor === id && game) openGame(game);
+      });
+    });
+  }
+
+  function openGame(game) {
+    if (!game) return;
+    window.location.href = game.slug + '/run.html';
+  }
+
+  function baseName(f) {
+    var n = f.webkitRelativePath || f.name;
+    var i = n.replace(/\\/g, '/').lastIndexOf('/');
+    return (i >= 0 ? n.slice(i + 1) : n).toUpperCase();
+  }
+
+  function allNames(files) {
+    return files.map(baseName);
+  }
+
+  function hasPath(files, fragment) {
+    var frag = fragment.toUpperCase();
+    return files.some(function (f) {
+      var p = (f.webkitRelativePath || f.name).replace(/\\/g, '/').toUpperCase();
+      return p.indexOf(frag) >= 0 || baseName(f) === frag;
+    });
+  }
+
+  var ROUTE66_MAPS = ['START.MAP', 'GAS.MAP', 'ALIEN.MAP', 'BIGFOOT.MAP', 'BREWERY.MAP',
+    'CAMPY.MAP', 'CARNIVAL.MAP', 'COFFIN.MAP', 'FLEA.MAP', 'HOOVRDAM.MAP',
+    'MINIGOLF.MAP', 'RANCH.MAP', 'SLAUGHTR.MAP', 'TRUCKSTP.MAP'];
+
+  function isDukeDcFolder(files) {
+    if (!files || !files.length) return false;
+    return files.some(function (f) { return /^DUKEDC\d+\.MAP$/i.test(baseName(f)); }) ||
+      files.some(function (f) { return /DUKEDCSL\.MAP$/i.test(baseName(f)); });
+  }
+
+  function isPenthouseFolder(files) {
+    if (!files || !files.length) return false;
+    return hasPath(files, 'PPAKGAME.CON') || hasPath(files, 'PENTHOUS.MAP') ||
+      hasPath(files, 'PPAKPENT.MAP');
+  }
+
+  function isRoute66Folder(files) {
+    if (!files || !files.length) return false;
+    var names = allNames(files);
+    if (names.indexOf('GAME66.CON') >= 0 || names.indexOf('USER66.CON') >= 0) return true;
+    if (files.some(function (f) {
+      return /(^|[\\/])ROUTE66([\\/]|$)/i.test(f.webkitRelativePath || '');
+    })) return true;
+    var hit = 0;
+    ROUTE66_MAPS.forEach(function (n) {
+      if (names.indexOf(n) >= 0) hit++;
+    });
+    return hit >= 3;
+  }
+
+  function checkGameFiles(files, game) {
+    if (!game) return { ok: true, missing: [], warn: [] };
+    if (game.verify === 'route66') {
+      var ok66 = isRoute66Folder(files);
+      return {
+        ok: ok66,
+        missing: ok66 ? [] : [txt({ en: 'ROUTE66 folder (*.MAP)', ru: 'папка ROUTE66 (*.MAP)' })],
+        warn: []
+      };
+    }
+    if (game.verify === 'dukedc') {
+      var okDc = isDukeDcFolder(files);
+      return {
+        ok: okDc,
+        missing: okDc ? [] : [txt({ en: 'Duke it out in DC folder', ru: 'папка Duke it out in DC' })],
+        warn: []
+      };
+    }
+    if (game.verify === 'penthouse') {
+      var okPh = isPenthouseFolder(files);
+      return {
+        ok: okPh,
+        missing: okPh ? [] : [txt({ en: 'ppakgame.con / Penthouse folder', ru: 'ppakgame.con / папка Penthouse' })],
+        warn: []
+      };
+    }
+    if (!game.mustHave || !game.mustHave.length) return { ok: true, missing: [], warn: [] };
+    var missing = [];
+    var warn = [];
+    game.mustHave.forEach(function (req) {
+      if (!hasPath(files, req)) missing.push(req);
+    });
+    if (game.extras) {
+      game.extras.forEach(function (ex) {
+        if (!hasPath(files, ex)) warn.push(ex);
+      });
+    }
+    return { ok: missing.length === 0, missing: missing, warn: warn };
+  }
+
+  function updateFileHints(files, game) {
+    GAMES.forEach(function (g) {
+      var el = document.getElementById('files-' + g.id);
+      if (!el) return;
+      if (!files || !files.length) { el.innerHTML = ''; return; }
+      var chk = checkGameFiles(files, g);
+      if (chk.ok && (!game || game.id !== g.id)) {
+        el.innerHTML = '<span>' + esc(t('keyFound')) + '</span>';
+      } else if (game && game.id === g.id) {
+        var html = '';
+        if (chk.missing.length) {
+          html += '<span class="miss">' + esc(t('missing')) + ' ' + esc(chk.missing.join(', ')) + '</span>';
+        } else {
+          html += '<span>' + esc(t('requiredOk')) + '</span>';
+        }
+        if (chk.warn.length && g.wantFolder) {
+          html += '<br>' + esc(t('recommended')) + ' ' + esc(chk.warn.slice(0, 4).join(', ')) +
+            (chk.warn.length > 4 ? '…' : '') +
+            (files.length < 5 ? ' <span class="miss">' + esc(t('useFolder')) + '</span>' : '');
+        }
+        el.innerHTML = html;
+      } else {
+        el.innerHTML = '';
+      }
+    });
+  }
+
+  function detectGame(files) {
+    var names = files.map(baseName);
+    var bySize = {};
+    files.forEach(function (f) {
+      var bn = baseName(f);
+      if (/\.GRP$/.test(bn)) bySize[bn] = f.size;
+    });
+
+    if (names.indexOf('BLOOD.INI') >= 0) {
+      var isz = 0;
+      files.forEach(function (f) {
+        if (/^BLOOD\.INI$/i.test(baseName(f))) isz = f.size;
+      });
+      if (isz === 10870) {
+        return GAMES.find(function (g) { return g.id === 'blood-lenin'; }) || null;
+      }
+    }
+
+    if (names.indexOf('BLOOD.RFF') >= 0) {
+      var bsz = 0;
+      files.forEach(function (f) {
+        if (/^BLOOD\.RFF$/i.test(baseName(f))) bsz = f.size;
+      });
+      if (bsz === 9570681) {
+        return GAMES.find(function (g) { return g.id === 'blood'; }) || null;
+      }
+      return GAMES.find(function (g) { return g.id === 'blood'; }) || null;
+    }
+
+    if (names.indexOf('VACATION.GRP') >= 0) {
+      return GAMES.find(function (g) { return g.id === 'duke-vacation'; }) || null;
+    }
+    if (names.indexOf('NWINTER.GRP') >= 0) {
+      return GAMES.find(function (g) { return g.id === 'duke-nwinter'; }) || null;
+    }
+    if (isPenthouseFolder(files)) {
+      return GAMES.find(function (g) { return g.id === 'duke-penthouse'; }) || null;
+    }
+    if (isDukeDcFolder(files)) {
+      return GAMES.find(function (g) { return g.id === 'duke-dc'; }) || null;
+    }
+
+    if (names.indexOf('REDNECK.GRP') >= 0) {
+      var sz = 0;
+      files.forEach(function (f) {
+        if (/^REDNECK\.GRP$/i.test(baseName(f))) sz = f.size;
+      });
+      if (sz === 191798609) return GAMES.find(function (g) { return g.id === 'rrridesagain'; });
+      if (isRoute66Folder(files)) return GAMES.find(function (g) { return g.id === 'rrroute66'; });
+      return GAMES.find(function (g) { return g.id === 'redneck'; });
+    }
+
+    if (isRoute66Folder(files)) {
+      return GAMES.find(function (g) { return g.id === 'rrroute66'; }) || null;
+    }
+
+    if (names.indexOf('LEVEL1.MAP') >= 0 && names.indexOf('TILES000.ART') >= 0) {
+      if (names.indexOf('WH2.EXE') >= 0 || names.indexOf('F_SONGS') >= 0 || names.indexOf('W_SONGS') >= 0) {
+        return GAMES.find(function (g) { return g.id === 'witchaven2'; }) || null;
+      }
+      return GAMES.find(function (g) { return g.id === 'witchaven'; }) || null;
+    }
+
+    for (var i = 0; i < GAMES.length; i++) {
+      var g = GAMES[i];
+      var d = g.detect;
+      if (!d) continue;
+      if (d.anyName && d.names.some(function (n) { return names.indexOf(n.toUpperCase()) >= 0; }))
+        return g;
+      if (d.names && d.names.every(function (n) {
+        var nu = n.toUpperCase();
+        if (names.indexOf(nu) < 0) return false;
+        if (d.sizes && d.sizes.length && bySize[nu] !== undefined) {
+          return d.sizes.indexOf(bySize[nu]) >= 0;
+        }
+        return true;
+      })) {
+        if (d.sizes && d.sizes.length) return g;
+        if (!d.sizes) return g;
+      }
+    }
+
+    for (var j = 0; j < GAMES.length; j++) {
+      var gg = GAMES[j];
+      if (gg.detect && gg.detect.names && gg.detect.names.some(function (n) {
+        return names.indexOf(n.toUpperCase()) >= 0;
+      })) return gg;
+    }
+    return null;
+  }
+
+  function resolveGame(fileList) {
+    var arr = Array.prototype.slice.call(fileList || []);
+    pendingFiles = arr;
+    selectedGame = detectGame(arr);
+
+    if (!arr.length) {
+      fileInfo.className = 'file-info';
+      fileInfo.textContent = t('noFile');
+      detected.classList.remove('visible');
+      btnLaunch.disabled = true;
+      return;
+    }
+
+    var label = arr.length === 1
+      ? arr[0].name + ' (' + formatSize(arr[0].size) + ')'
+      : arr.length + ' ' + t('filesFromFolder');
+
+    fileInfo.className = 'file-info ok';
+    fileInfo.textContent = t('loaded') + ' ' + label;
+
+    if (selectedGame) {
+      detectedGameId = selectedGame.id;
+      detected.classList.add('visible');
+      var chk = checkGameFiles(arr, selectedGame);
+      verifiedFor = chk.ok ? selectedGame.id : null;
+      detected.innerHTML = (chk.ok ? t('verified') + ' ' : t('detected') + ' ') + '<strong>' + esc(selectedGame.title) + '</strong> (' +
+        esc(selectedGame.engine) + ')' +
+        (chk.ok ? '<br><span style="color:var(--ok)">' + esc(t('verifiedOk')) + '</span>' : '') +
+        (chk.missing.length ? '<br><span style="color:var(--warn)">' + esc(t('missing')) + ' ' + esc(chk.missing.join(', ')) + '</span>' : '');
+      btnLaunch.disabled = !chk.ok;
+      updateFileHints(arr, selectedGame);
+      renderGrid();
+    } else {
+      detectedGameId = null;
+      verifiedFor = null;
+      detected.classList.add('visible');
+      detected.innerHTML = '<span style="color:var(--warn)">' + esc(t('noDetect')) + '</span> ' + esc(t('noDetectHint'));
+      btnLaunch.disabled = true;
+      updateFileHints(arr, null);
+      renderGrid();
+    }
+  }
+
+  function formatSize(n) {
+    if (n >= 1073741824) return (n / 1073741824).toFixed(2) + ' GB';
+    if (n >= 1048576) return (n / 1048576).toFixed(1) + ' MB';
+    if (n >= 1024) return (n / 1024).toFixed(1) + ' KB';
+    return n + ' B';
+  }
+
+  document.getElementById('btn-grp').addEventListener('click', function () {
+    document.getElementById('inp-grp').click();
+  });
+  document.getElementById('btn-folder').addEventListener('click', function () {
+    document.getElementById('inp-folder').click();
+  });
+
+  document.getElementById('inp-grp').addEventListener('change', function (e) {
+    if (e.target.files && e.target.files.length) resolveGame(e.target.files);
+  });
+  document.getElementById('inp-folder').addEventListener('change', function (e) {
+    if (e.target.files && e.target.files.length) resolveGame(e.target.files);
+  });
+
+  btnLaunch.addEventListener('click', function () {
+    if (!pendingFiles || !pendingFiles.length || !selectedGame) return;
+    var chk = checkGameFiles(pendingFiles, selectedGame);
+    if (!chk.ok) {
+      fileInfo.className = 'file-info warn';
+      fileInfo.textContent = t('missingFiles') + ' ' + chk.missing.join(', ');
+      return;
+    }
+    openGame(selectedGame);
+  });
+
+  if (location.protocol === 'file:') {
+    fileInfo.className = 'file-info warn';
+    fileInfo.textContent = t('fileProtocol');
+    document.getElementById('btn-grp').disabled = true;
+    document.getElementById('btn-folder').disabled = true;
+  }
+
+  function applyLang() {
+    document.documentElement.lang = lang;
+    document.getElementById('tagline').textContent = t('tagline');
+    document.getElementById('hero-title').textContent = t('heroTitle');
+    document.getElementById('btn-grp').textContent = t('btnFile');
+    document.getElementById('btn-folder').textContent = t('btnFolder');
+    document.getElementById('games-title').textContent = t('gamesTitle');
+    document.getElementById('games-sub').textContent = t('gamesSub');
+    document.getElementById('live-demo-label').textContent = t('liveDemo');
+    btnLaunch.textContent = t('play');
+    document.getElementById('lang-en').classList.toggle('active', lang === 'en');
+    document.getElementById('lang-ru').classList.toggle('active', lang === 'ru');
+    if (!pendingFiles || !pendingFiles.length) {
+      fileInfo.textContent = t('fileInfoIdle');
+    }
+    renderGrid();
+    if (pendingFiles && pendingFiles.length) resolveGame(pendingFiles);
+  }
+
+  document.getElementById('lang-en').addEventListener('click', function () {
+    lang = 'en';
+    localStorage.setItem('begw-lang', lang);
+    applyLang();
+  });
+  document.getElementById('lang-ru').addEventListener('click', function () {
+    lang = 'ru';
+    localStorage.setItem('begw-lang', lang);
+    applyLang();
+  });
+
+  applyLang();
+})();
+  </script>
+</body>
+</html>
