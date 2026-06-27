@@ -65,19 +65,5 @@ Engine source lives in separate `*web` repositories (NBlood, EDuke32, Rednukem, 
 
 **Онлайн:** [https://buildenginegames.online/](https://buildenginegames.online/)
 
-### Локальный запуск
-
-```powershell
-cd buildgit
-powershell -File sync-from-projects.ps1
-powershell -File install-usergrp.ps1
-powershell -File start-servers.ps1
-```
-
-Откройте **http://127.0.0.1:8760/**, укажите свой GRP или папку игры, нажмите **ИГРАТЬ**.
-
-Файлы игр и собранные `*.wasm` / `*.data` в репозиторий **не входят** — их нужно собрать или скопировать скриптом `sync-from-projects.ps1`.
-
-Подробности сборки — в [BUILD.md](BUILD.md).
 
 © 2026 [Carter54](https://github.com/Carter54git)
